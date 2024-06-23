@@ -1,0 +1,17 @@
+[tool.ruff]
+line-length = 88
+exclude = [
+    "tests/*",  # Exclude test files or directories
+    "docs/*",  # Exclude documentation files or directories
+]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes errors
+    "W",  # pycodestyle warnings
+    "C90",  # custom rules (e.g., PEP8 compliance)
+    "I",  # import rules (similar to isort)
+    "A",  # additional rules for even stricter linting
+]
+ignore = []
