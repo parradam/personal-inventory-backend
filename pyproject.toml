@@ -5,6 +5,7 @@ exclude = [
     "docs/*",  # Exclude documentation files or directories
 ]
 
+
 [tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
@@ -15,3 +16,6 @@ select = [
     "A",  # additional rules for even stricter linting
 ]
 ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"src/backend/data/migrations/*.py" = ["E501"]
