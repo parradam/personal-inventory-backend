@@ -19,3 +19,8 @@ ignore = []
 
 [tool.ruff.lint.per-file-ignores]
 "src/backend/data/migrations/*.py" = ["E501"]
+
+[tool.pytest.ini_options]
+pythonpath = ". src"
+DJANGO_SETTINGS_MODULE = "src.backend.settings"
+python_files = "test_*.py"
