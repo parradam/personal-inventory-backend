@@ -1,6 +1,6 @@
 from django.db import models
 
-from .custom_user import CustomUser
+from backend.data.models.custom_user import CustomUser
 
 
 class Item(models.Model):
