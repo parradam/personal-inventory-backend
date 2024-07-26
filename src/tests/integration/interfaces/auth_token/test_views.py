@@ -41,7 +41,7 @@ class TestTokenGeneration:
         token_exists = Token.objects.filter(key=token).exists()
         assert token_exists
 
-    def test_token_can_be_deleted(self, user: models.CustomUser):
+    def test_token_can_be_deleted(self, user: models.CustomUser) -> None:
         client = APIClient()
 
         # Create token
