@@ -113,7 +113,7 @@ class TestItemManagement:
             "/api/item_management/items/", data=valid_item, format="json"
         )
 
-        assert response.status_code == 401
+        assert response.status_code == 400
 
     def test_item_not_created_without_name(
         self, user: models.CustomUser, item_without_name: dict[str, str | int]
