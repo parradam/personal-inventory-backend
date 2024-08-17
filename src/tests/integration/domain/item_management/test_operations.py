@@ -26,7 +26,7 @@ def used_to() -> datetime:
 
 
 @pytest.mark.django_db
-class TestItem:
+class TestCreateItem:
     def test_can_create_item(
         self, user: models.CustomUser, used_from: datetime, used_to: datetime
     ) -> None:
@@ -62,3 +62,28 @@ class TestItem:
         assert returned_item_dto.used_from == used_from
         assert returned_item_dto.used_to == used_to
         assert returned_item_dto.user_id == user_id
+
+
+@pytest.mark.django_db
+class TestDeleteItem:
+    def test_can_delete_item(
+        self, user: models.CustomUser, used_from: datetime, used_to: datetime
+    ) -> None:
+        user.save()
+        user_id: int = user.pk
+        item_dto: dtos.ItemDTO = dtos.ItemDTO(
+            name="Test item",
+            barcode="12345678",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user_id=user_id,
+        )
+        returned_item_dto: dtos.ItemDTO = operations.create_item(item_dto)
+        assert models.Item.objects.count() == 1
+        assert returned_item_dto.id
+
+        result = operations.delete_item(returned_item_dto.id, user.pk)
+
+        assert result
+        assert models.Item.objects.count() == 0
