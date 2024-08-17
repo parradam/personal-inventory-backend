@@ -6,7 +6,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from backend.application.item_management import add_item_to_inventory
+from backend.application.item_management import (
+    add_item_to_inventory,
+    list_all_items_for_user,
+)
 from backend.domain.item_management import dtos
 from backend.interfaces.item_management import serializers
 
@@ -29,6 +32,23 @@ class ItemList(APIView):
             return Response(response_serializer.data, status=201)
 
         return Response({"errors": serializer.errors}, status=400)
+
+    @permission_classes([IsAuthenticated])
+    def get(self, request: Request) -> Response:
+        try:
+            user_id = request.user.pk
+            returned_item_list: list[dtos.ItemDTO] = (
+                list_all_items_for_user.list_all_items_for_user(user_id)
+            )
+
+            response_serializer: serializers.Item = serializers.Item(
+                returned_item_list, many=True
+            )
+            return Response(response_serializer.data, status=200)
+        except Exception:
+            return Response(
+                {"error": "There was an error retrieving the list of items"}, status=500
+            )
 
     def get_validated_data(self, request: Request) -> dict[str, Any] | None:
         try:
