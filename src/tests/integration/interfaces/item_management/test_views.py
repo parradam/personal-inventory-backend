@@ -113,7 +113,7 @@ class TestItemListPost:
             "/api/item_management/items/", data=valid_item, format="json"
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 401
 
     def test_item_not_created_without_name(
         self, user: models.CustomUser, item_without_name: dict[str, str | int]
@@ -236,3 +236,13 @@ class TestItemListGet:
         assert returned_item_list[1]["owner"] == item_two.owner
         assert returned_item_list[1]["used_from"] == item_two.used_from
         assert returned_item_list[1]["used_to"] == item_two.used_to
+
+    def test_401_when_not_logged_in(self, valid_item: dict[str, str | int]) -> None:
+        client = APIClient()
+
+        # Atempt to create item
+        response = client.get(
+            "/api/item_management/items/", data=valid_item, format="json"
+        )
+
+        assert response.status_code == 401
