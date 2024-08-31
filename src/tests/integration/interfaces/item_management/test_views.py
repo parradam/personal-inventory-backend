@@ -67,7 +67,7 @@ def item_with_invalid_used_dates(used_from: str, used_to: str) -> dict[str, str 
 
 
 @pytest.mark.django_db
-class TestItemListPost:
+class TestItemPost:
     def test_item_can_be_created(
         self, user: models.CustomUser, valid_item: dict[str, str | int]
     ) -> None:
@@ -163,7 +163,7 @@ class TestItemListPost:
 
 
 @pytest.mark.django_db
-class TestItemListGet:
+class TestItemGet:
     def test_empty_item_list_can_be_retrieved(self, user: models.CustomUser) -> None:
         client = APIClient()
 
@@ -243,6 +243,60 @@ class TestItemListGet:
         # Atempt to create item
         response = client.get(
             "/api/item_management/items/", data=valid_item, format="json"
+        )
+
+        assert response.status_code == 401
+
+
+@pytest.mark.django_db
+class TestItemDelete:
+    def test_item_can_be_removed(
+        self, user: models.CustomUser, used_from: datetime, used_to: datetime
+    ) -> None:
+        client = APIClient()
+
+        # Create token for user
+        token = Token.objects.create(user=user)
+
+        # Create items in DB
+        item_one: models.Item = models.Item.objects.create(
+            name="Abacus",
+            barcode="123",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user=user,
+        )
+        item_two: models.Item = models.Item.objects.create(
+            name="Beachball",
+            barcode="456",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user=user,
+        )
+        assert models.Item.objects.count() == 2
+
+        # Get item list
+        client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
+        response = client.delete(f"/api/item_management/items/{item_two.pk}")
+
+        # Check response
+        assert response.status_code == 204
+
+        # Check content
+        assert response.data is None
+
+        # Check DB
+        assert models.Item.objects.count() == 1
+        assert models.Item.objects.get(id=item_one.pk)
+
+    def test_401_when_not_logged_in(self, valid_item: dict[str, str | int]) -> None:
+        client = APIClient()
+
+        # Atempt to create item
+        response = client.delete(
+            "/api/item_management/items/1", data=valid_item, format="json"
         )
 
         assert response.status_code == 401
