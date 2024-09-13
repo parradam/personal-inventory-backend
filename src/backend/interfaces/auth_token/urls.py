@@ -5,5 +5,6 @@ from backend.interfaces.auth_token import views as auth_views
 
 urlpatterns = [
     path("token", views.obtain_auth_token, name="token"),
+    path("login", auth_views.LoginView.as_view(), name="login"),
     path("logout", auth_views.logout, name="logout"),
 ]
