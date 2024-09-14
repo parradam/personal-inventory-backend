@@ -40,7 +40,10 @@ class ItemList(views.APIView):
                 )
 
         except Exception:
-            return None
+            return response.Response(
+                {"error": "There was an error creating the item."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     def get(self, request: request.Request) -> response.Response:
         try:

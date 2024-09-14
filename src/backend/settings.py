@@ -143,6 +143,6 @@ AUTH_USER_MODEL = "data.CustomUser"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication",
+        "backend.interfaces.auth_token.authentication.CookieTokenAuthentication",
     ]
 }
