@@ -1,3 +1,5 @@
+import datetime
+
 from django.contrib import auth
 from rest_framework import status, views
 from rest_framework.authtoken.models import Token
@@ -17,14 +19,19 @@ class LoginView(views.APIView):
             if user is not None:
                 token, _created = Token.objects.get_or_create(user=user)
 
+                expires: datetime.datetime = datetime.datetime.now(
+                    datetime.UTC
+                ) + datetime.timedelta(days=31)
+
                 response = Response({"message": "Login successful"})
                 response.set_cookie(
                     key="auth_token",
                     value=token.key,
-                    httponly=False,
+                    httponly=True,
                     secure=True,
-                    samesite="Lax",
-                    max_age=60 * 60 * 24 * 31,
+                    samesite="None",
+                    expires=expires,
+                    path="/",
                 )
 
                 return response
@@ -32,7 +39,8 @@ class LoginView(views.APIView):
                 return Response(
                     {"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST
                 )
-        except Exception:
+        except Exception as e:
+            print(e)
             return Response(
                 {"error": "Server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
