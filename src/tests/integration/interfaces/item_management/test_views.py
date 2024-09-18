@@ -249,6 +249,63 @@ class TestItemGet:
 
 
 @pytest.mark.django_db
+class TestItemDetailGet:
+    def test_item_can_be_retrieved(
+        self, user: models.CustomUser, used_from: datetime, used_to: datetime
+    ) -> None:
+        client = APIClient()
+
+        # Create token for user
+        token = Token.objects.create(user=user)
+
+        # Create items in DB
+        item_one: models.Item = models.Item.objects.create(
+            name="Abacus",
+            barcode="123",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user=user,
+        )
+        models.Item.objects.create(
+            name="Beachball",
+            barcode="456",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user=user,
+        )
+        assert models.Item.objects.count() == 2
+
+        # Get item list
+        client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
+        response = client.get(f"/api/item_management/items/{item_one.pk}")
+
+        # Check response
+        assert response.status_code == 200
+
+        # # Check content
+        returned_item = response.json()
+        assert returned_item is not None
+
+        # Assertions on item one
+        assert returned_item["user_id"] == user.pk
+        assert returned_item["name"] == item_one.name
+        assert returned_item["barcode"] == item_one.barcode
+        assert returned_item["owner"] == item_one.owner
+        assert returned_item["used_from"] == item_one.used_from
+        assert returned_item["used_to"] == item_one.used_to
+
+    def test_401_when_not_logged_in(self, valid_item: dict[str, str | int]) -> None:
+        client = APIClient()
+
+        # Atempt to get item
+        response = client.get("/api/item_management/items/1")
+
+        assert response.status_code == 401
+
+
+@pytest.mark.django_db
 class TestItemDelete:
     def test_item_can_be_removed(
         self, user: models.CustomUser, used_from: datetime, used_to: datetime
@@ -294,7 +351,7 @@ class TestItemDelete:
     def test_401_when_not_logged_in(self, valid_item: dict[str, str | int]) -> None:
         client = APIClient()
 
-        # Atempt to create item
+        # Atempt to delete item
         response = client.delete(
             "/api/item_management/items/1", data=valid_item, format="json"
         )

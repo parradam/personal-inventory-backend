@@ -4,6 +4,7 @@ from rest_framework import permissions, request, response, status, views
 
 from backend.application.item_management import (
     add_item_to_inventory,
+    get_one_item_for_user,
     list_all_items_for_user,
     remove_item_from_inventory,
 )
@@ -70,9 +71,31 @@ class ItemList(views.APIView):
 class ItemDetail(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    def get(self, request: request.Request, pk: int) -> response.Response:
+        try:
+            item_id: int = pk
+            user_id: int = cast(int, request.user.pk)
+
+            returned_item = get_one_item_for_user.get_one_item_for_user(
+                user_id, item_id
+            )
+
+            response_serializer: serializers.Item = serializers.Item(
+                returned_item,
+            )
+            return response.Response(
+                response_serializer.data,  # type: ignore
+                status=status.HTTP_200_OK,
+            )
+        except Exception:
+            return response.Response(
+                {"error": "The item could not be retrieved."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
     def delete(self, request: request.Request, pk: int) -> response.Response:
         try:
-            item_id: int = self.kwargs["pk"]
+            item_id: int = pk
             user_id: int = cast(int, request.user.pk)
             has_item_been_removed: bool = (
                 remove_item_from_inventory.remove_item_from_inventory(item_id, user_id)
