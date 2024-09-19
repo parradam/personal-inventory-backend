@@ -37,12 +37,14 @@ class LoginView(views.APIView):
                 return response
             else:
                 return Response(
-                    {"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST
+                    {"error": "Your username or password were incorrect."},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
         except Exception as e:
             print(e)
             return Response(
-                {"error": "Server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "There was an error signing you in. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
 
