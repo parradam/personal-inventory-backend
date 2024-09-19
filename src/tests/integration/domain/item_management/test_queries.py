@@ -129,3 +129,80 @@ class TestGetListOfItems:
 
         # Check that correct list of items is returned
         assert len(retrieved_items) == 0
+
+
+@pytest.mark.django_db
+class TestGetItem:
+    def test_can_get_item(
+        self, user: models.CustomUser, used_from: datetime, used_to: datetime
+    ) -> None:
+        # Create items in DB
+        item_one: models.Item = models.Item.objects.create(
+            name="Abacus",
+            barcode="123",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user=user,
+        )
+        models.Item.objects.create(
+            name="Beachball",
+            barcode="456",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user=user,
+        )
+        assert models.Item.objects.count() == 2
+
+        retrieved_item: dtos.ItemDTO = queries.get_item(
+            user_id=user.pk, item_id=item_one.pk
+        )
+
+        # Assertions on item one
+        assert retrieved_item.user_id == user.pk
+        assert retrieved_item.name == item_one.name
+        assert retrieved_item.barcode == item_one.barcode
+        assert retrieved_item.owner == item_one.owner
+        assert retrieved_item.used_from == item_one.used_from
+        assert retrieved_item.used_to == item_one.used_to
+
+    def test_does_not_get_other_users_items(
+        self,
+        user: models.CustomUser,
+        another_user: models.CustomUser,
+        used_from: datetime,
+        used_to: datetime,
+    ) -> None:
+        # Create items in DB
+        models.Item.objects.create(
+            name="Abacus",
+            barcode="123",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user=user,
+        )
+        item_two: models.Item = models.Item.objects.create(
+            name="Beachball",
+            barcode="456",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user=another_user,
+        )
+        assert models.Item.objects.count() == 2
+
+        # This item doesn't belong to this user!
+        with pytest.raises(models.Item.DoesNotExist):
+            queries.get_item(user_id=user.pk, item_id=item_two.pk)
+
+    def test_handles_no_items(
+        self,
+        user: models.CustomUser,
+    ) -> None:
+        # No items in DB
+        assert models.Item.objects.count() == 0
+
+        with pytest.raises(models.Item.DoesNotExist):
+            queries.get_item(user_id=user.pk, item_id=1)
