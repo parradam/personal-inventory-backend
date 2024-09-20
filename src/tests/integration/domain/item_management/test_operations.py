@@ -25,6 +25,20 @@ def used_to() -> datetime:
     )
 
 
+@pytest.fixture
+def used_from_updated() -> datetime:
+    return timezone.make_aware(
+        datetime(2018, 6, 30, 0, 0), timezone.get_default_timezone()
+    )
+
+
+@pytest.fixture
+def used_to_updated() -> datetime:
+    return timezone.make_aware(
+        datetime(2019, 12, 31, 0, 0), timezone.get_default_timezone()
+    )
+
+
 @pytest.mark.django_db
 class TestCreateItem:
     def test_can_create_item(
@@ -62,6 +76,64 @@ class TestCreateItem:
         assert returned_item_dto.used_from == used_from
         assert returned_item_dto.used_to == used_to
         assert returned_item_dto.user_id == user_id
+
+
+@pytest.mark.django_db
+class TestUpdateItem:
+    def test_can_update_item(
+        self,
+        user: models.CustomUser,
+        used_from: datetime,
+        used_to: datetime,
+        used_from_updated: datetime,
+        used_to_updated: datetime,
+    ) -> None:
+        user.save()
+
+        item_dto: dtos.ItemDTO = dtos.ItemDTO(
+            name="Test item",
+            barcode="12345678",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user_id=user.pk,
+        )
+        original_item_dto: dtos.ItemDTO = operations.create_item(item_dto)
+        assert models.Item.objects.count() == 1
+        assert original_item_dto.id
+
+        update_item_dto: dtos.UpdateItemDTO = dtos.UpdateItemDTO(
+            id=original_item_dto.id,
+            name="Test item2",
+            barcode="123456789",
+            owner="Owner2",
+            used_from=used_from_updated,
+            used_to=used_to_updated,
+            user_id=user.pk,
+        )
+
+        returned_item_dto = operations.update_item(update_item_dto, user.pk)
+
+        assert returned_item_dto
+        assert models.Item.objects.count() == 1
+
+        # First check that DB was updated
+        returned_model: models.Item | None = models.Item.objects.first()
+        assert returned_model is not None
+        assert returned_model.name == "Test item2"
+        assert returned_model.barcode == "123456789"
+        assert returned_model.owner == "Owner2"
+        assert returned_model.used_from == used_from_updated
+        assert returned_model.used_to == used_to_updated
+        assert returned_model.user == user
+
+        # Then check what was returned from domain layer
+        assert returned_item_dto.name == "Test item2"
+        assert returned_item_dto.barcode == "123456789"
+        assert returned_item_dto.owner == "Owner2"
+        assert returned_item_dto.used_from == used_from_updated
+        assert returned_item_dto.used_to == used_to_updated
+        assert returned_item_dto.user_id == user.pk
 
 
 @pytest.mark.django_db
