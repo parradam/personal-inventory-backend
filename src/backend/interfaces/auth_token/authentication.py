@@ -7,7 +7,6 @@ from rest_framework.exceptions import AuthenticationFailed
 
 class CookieTokenAuthentication(TokenAuthentication):
     def authenticate(self, request: request.Request) -> tuple[Any, Any] | None:
-        print(request.headers)
         # Check the 'Authorization' header first
         auth = super().authenticate(request)
         if auth:

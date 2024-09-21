@@ -45,6 +45,19 @@ def valid_item(used_from: str) -> dict[str, str | int]:
 
 
 @pytest.fixture
+def valid_item_for_update(used_from: str) -> dict[str, str | int | None]:
+    item: dict[str, str | int | None] = {
+        "name": "An item",
+        "barcode": "123456",
+        "owner": "Adam",
+        "used_from": used_from,
+        "used_to": None,
+        "id": None,
+    }
+    return item
+
+
+@pytest.fixture
 def item_without_name(used_from: str) -> dict[str, str | int]:
     item: dict[str, str | int] = {
         "barcode": "123456",
@@ -301,6 +314,66 @@ class TestItemDetailGet:
 
         # Atempt to get item
         response = client.get("/api/item_management/items/1")
+
+        assert response.status_code == 401
+
+
+@pytest.mark.django_db
+class TestItemDetailUpdate:
+    def test_item_can_be_updated(
+        self,
+        user: models.CustomUser,
+        used_from: datetime,
+        used_to: datetime,
+        valid_item_for_update: dict[str, str | int],
+    ) -> None:
+        client = APIClient()
+
+        # Create token for user
+        token = Token.objects.create(user=user)
+
+        # Create items in DB
+        item_one: models.Item = models.Item.objects.create(
+            name="Abacus",
+            barcode="123",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user=user,
+        )
+        assert models.Item.objects.count() == 1
+
+        # Ensure id matches item id in DB
+        valid_item_for_update["id"] = item_one.pk
+
+        # Update item
+        client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
+        response = client.put(
+            f"/api/item_management/items/{item_one.pk}",
+            data=valid_item_for_update,
+            format="json",
+        )
+
+        # Check response
+        assert response.status_code == 200
+
+        # # Check content
+        updated_item = response.json()
+        assert updated_item is not None
+
+        # Assertions on item one
+        assert updated_item["user_id"] == user.pk
+        assert updated_item["name"] == valid_item_for_update["name"]
+        assert updated_item["barcode"] == valid_item_for_update["barcode"]
+        assert updated_item["owner"] == valid_item_for_update["owner"]
+        assert updated_item["used_from"] == valid_item_for_update["used_from"]
+        assert updated_item["used_to"] == valid_item_for_update["used_to"]
+
+    def test_401_when_not_logged_in(self, valid_item: dict[str, str | int]) -> None:
+        client = APIClient()
+
+        # Atempt to get item
+        response = client.put("/api/item_management/items/1")
 
         assert response.status_code == 401
 

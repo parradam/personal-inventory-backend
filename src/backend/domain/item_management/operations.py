@@ -12,7 +12,7 @@ def create_item(item_dto: dtos.ItemDTO) -> dtos.ItemDTO:
     return new_item_dto
 
 
-def update_item(item_dto: dtos.UpdateItemDTO, user_id: int) -> dtos.UpdateItemDTO:
+def update_item(item_dto: dtos.UpdateItemDTO, user_id: int) -> dtos.ItemDTO:
     item_to_update: models.Item = models.Item.objects.get(pk=item_dto.id)
 
     if item_to_update.user.pk == user_id:
@@ -24,7 +24,7 @@ def update_item(item_dto: dtos.UpdateItemDTO, user_id: int) -> dtos.UpdateItemDT
 
         item_to_update.save()
 
-    updated_item_dto = mappers.map_model_to_update_item_dto(item_to_update)
+    updated_item_dto = mappers.map_model_to_dto(item_to_update)
     return updated_item_dto
 
 
