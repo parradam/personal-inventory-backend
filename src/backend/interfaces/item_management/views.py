@@ -7,6 +7,7 @@ from backend.application.item_management import (
     get_one_item_for_user,
     list_all_items_for_user,
     remove_item_from_inventory,
+    update_item_for_user,
 )
 from backend.domain.item_management import dtos
 from backend.interfaces.item_management import serializers
@@ -88,6 +89,40 @@ class ItemDetail(views.APIView):
                 status=status.HTTP_200_OK,
             )
         except Exception:
+            return response.Response(
+                {"error": "The item could not be retrieved."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def put(self, request: request.Request, pk: int) -> response.Response:
+        try:
+            user_id: int = cast(int, request.user.pk)
+
+            data = request.data
+            data["user_id"] = user_id
+
+            serializer: Any = serializers.UpdateItem(data=data)
+            if serializer.is_valid():
+                update_item_dto: dtos.UpdateItemDTO = serializer.to_dto()
+                updated_item_dto = update_item_for_user.update_item_for_user(
+                    update_item_dto, user_id
+                )
+
+                response_serializer: serializers.Item = serializers.Item(
+                    updated_item_dto
+                )
+                return response.Response(
+                    response_serializer.data,  # type: ignore
+                    status=status.HTTP_200_OK,
+                )
+            else:
+                return response.Response(
+                    {"errors": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        except Exception as e:
+            print(e)
             return response.Response(
                 {"error": "The item could not be retrieved."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
