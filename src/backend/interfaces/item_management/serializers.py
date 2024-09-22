@@ -7,7 +7,7 @@ from backend.domain.item_management import dtos
 
 class Item(serializers.Serializer[dtos.ItemDTO]):
     user_id = serializers.IntegerField()
-    name = serializers.CharField(max_length=50)
+    name = serializers.CharField(min_length=3, max_length=50)
     used_from = serializers.DateTimeField()
     used_to = serializers.DateTimeField(allow_null=True, default=None)
     barcode = serializers.CharField(
@@ -21,7 +21,9 @@ class Item(serializers.Serializer[dtos.ItemDTO]):
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if attrs["used_to"]:
             if attrs["used_from"] > attrs["used_to"]:
-                raise serializers.ValidationError("Used to must be after used from.")
+                raise serializers.ValidationError(
+                    {"used_to": "Used to must be after used from."}
+                )
         return attrs
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -50,7 +52,7 @@ class Item(serializers.Serializer[dtos.ItemDTO]):
 
 class UpdateItem(serializers.Serializer[dtos.ItemDTO]):
     user_id = serializers.IntegerField()
-    name = serializers.CharField(max_length=50)
+    name = serializers.CharField(min_length=3, max_length=50)
     used_from = serializers.DateTimeField()
     used_to = serializers.DateTimeField(allow_null=True, default=None)
     barcode = serializers.CharField(
@@ -64,7 +66,9 @@ class UpdateItem(serializers.Serializer[dtos.ItemDTO]):
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         if attrs["used_to"]:
             if attrs["used_from"] > attrs["used_to"]:
-                raise serializers.ValidationError("Used to must be after used from.")
+                raise serializers.ValidationError(
+                    {"used_to": "Used to must be after used from."}
+                )
         return attrs
 
     def to_internal_value(self, data: dict[str, Any]) -> dict[str, Any]:
