@@ -17,6 +17,138 @@ def user(password_for_user: str) -> models.CustomUser:
     return user
 
 
+class TestRegisterUser:
+    @pytest.mark.django_db
+    def test_user_can_be_registered(self) -> None:
+        client = APIClient()
+
+        response = client.post(
+            "/api/auth_token/register",
+            {
+                "username": "new_user",
+                "email": "new_user@test.com",
+                "password": "password_for_user",
+            },
+        )
+
+        # Check response
+        assert response.status_code == 201
+        assert response.data.get("username") == "new_user"
+
+        # Check DB for user
+        user_exists = models.CustomUser.objects.filter(username="new_user").exists()
+        assert user_exists
+
+    @pytest.mark.django_db
+    def test_400_if_username_equals_password(self) -> None:
+        client = APIClient()
+
+        response = client.post(
+            "/api/auth_token/register",
+            {
+                "username": "new_user",
+                "email": "new_user@test.com",
+                "password": "new_user",
+            },
+        )
+
+        # Check response
+        assert response.status_code == 400
+
+        # Check DB for user
+        user_exists = models.CustomUser.objects.filter(username="new_user").exists()
+        assert not user_exists
+
+    @pytest.mark.django_db
+    def test_400_if_missing_username(self) -> None:
+        client = APIClient()
+
+        response = client.post(
+            "/api/auth_token/register",
+            {
+                "email": "new_user@test.com",
+                "password": "password_for_user",
+            },
+        )
+
+        # Check response
+        assert response.status_code == 400
+
+        # Check DB for user
+        user_exists = models.CustomUser.objects.filter(username="new_user").exists()
+        assert not user_exists
+
+    @pytest.mark.django_db
+    def test_400_if_missing_email(self) -> None:
+        client = APIClient()
+
+        response = client.post(
+            "/api/auth_token/register",
+            {
+                "username": "new_user",
+                "password": "password_for_user",
+            },
+        )
+
+        # Check response
+        assert response.status_code == 400
+
+        # Check DB for user
+        user_exists = models.CustomUser.objects.filter(username="new_user").exists()
+        assert not user_exists
+
+    @pytest.mark.django_db
+    def test_400_if_missing_password(self) -> None:
+        client = APIClient()
+
+        response = client.post(
+            "/api/auth_token/register",
+            {
+                "username": "new_user",
+                "email": "new_user@test.com",
+            },
+        )
+
+        # Check response
+        assert response.status_code == 400
+
+        # Check DB for user
+        user_exists = models.CustomUser.objects.filter(username="new_user").exists()
+        assert not user_exists
+
+    @pytest.mark.django_db(transaction=True)
+    def test_400_if_user_exists(self) -> None:
+        client = APIClient()
+
+        first_response = client.post(
+            "/api/auth_token/register",
+            {
+                "username": "new_user",
+                "password": "password_for_user",
+                "email": "new_user@test.com",
+            },
+        )
+
+        # Check response
+        assert first_response.status_code == 201
+
+        second_response = client.post(
+            "/api/auth_token/register",
+            {
+                "username": "new_user",
+                "password": "password_for_user",
+                "email": "new_user@test.com",
+            },
+        )
+
+        # Check response
+        assert second_response.status_code == 400
+
+        # Check DB for user
+        user_count = models.CustomUser.objects.filter(username="new_user").count()
+        assert user_count == 1
+
+
 @pytest.mark.django_db
 class TestTokenGeneration:
     def test_token_can_be_generated(

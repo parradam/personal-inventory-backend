@@ -1,11 +1,50 @@
 import datetime
 
 from django.contrib import auth
+from django.db import IntegrityError
 from rest_framework import status, views
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
+
+from backend.application.auth import register_user
+from backend.interfaces.auth_token import serializers
+
+
+class RegisterView(views.APIView):
+    def post(self, request: Request) -> Response:
+        try:
+            data = request.data
+            serializer: serializers.RegisterUser = serializers.RegisterUser(data=data)
+
+            if serializer.is_valid():
+                username = serializer.validated_data.get("username")
+                email = serializer.validated_data.get("email")
+                password = serializer.validated_data.get("password")
+
+                register_user.register_user(username, email, password)
+
+                return Response(
+                    {"username": username},
+                    status=status.HTTP_201_CREATED,
+                )
+            else:
+                return Response(
+                    {"errors": serializer.errors},  # type: ignore
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except IntegrityError:  # Unique constraint failed
+            return Response(
+                {"error": "A user with this username or email already exists."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            print(e)
+            return Response(
+                {"error": "There was an error signing you up. Please try again later."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class LoginView(views.APIView):
