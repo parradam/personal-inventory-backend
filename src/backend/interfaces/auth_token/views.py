@@ -4,9 +4,8 @@ from typing import Any
 from django.contrib import auth
 from django.contrib.auth.models import AnonymousUser
 from django.db import IntegrityError
-from rest_framework import status, views
+from rest_framework import permissions, status, views
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -116,12 +115,14 @@ class LoginView(views.APIView):
             )
 
 
-@api_view(["POST"])
-def logout(request: Request) -> Response:
-    user = request.user
-    if user.is_authenticated:
-        token = Token.objects.get(user=user)
-        token.delete()
-        return Response(status=status.HTTP_200_OK)
-    else:
+class LogoutView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request: Request) -> Response:
+        user = request.user
+        if user.is_authenticated:
+            token = Token.objects.get(user=user)
+            token.delete()
+            return Response(status=status.HTTP_200_OK)
+
         return Response(status=status.HTTP_400_BAD_REQUEST)
