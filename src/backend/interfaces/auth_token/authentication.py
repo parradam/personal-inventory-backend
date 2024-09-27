@@ -15,9 +15,11 @@ class CookieTokenAuthentication(TokenAuthentication):
         # Fallback to checking the 'auth_token' cookie
         token = request.COOKIES.get("auth_token")
         if not token:
+            request.META["invalid_cookie"] = True
             return None
 
         try:
             return self.authenticate_credentials(token)
         except AuthenticationFailed:
+            request.META["invalid_cookie"] = True
             return None

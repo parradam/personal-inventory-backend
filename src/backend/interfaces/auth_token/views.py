@@ -1,6 +1,8 @@
 import datetime
+from typing import Any
 
 from django.contrib import auth
+from django.contrib.auth.models import AnonymousUser
 from django.db import IntegrityError
 from rest_framework import status, views
 from rest_framework.authtoken.models import Token
@@ -10,6 +12,34 @@ from rest_framework.response import Response
 
 from backend.application.auth import register_user
 from backend.interfaces.auth_token import serializers
+
+
+class AuthCheckView(views.APIView):
+    def get(self, request: Request) -> Response:
+        cookie_params: dict[str, Any] = {
+            "path": "/",
+            "domain": None,
+            "samesite": "None",
+        }
+
+        if hasattr(request, "invalid_cookie"):
+            response = Response(
+                {"authenticated": False}, status=status.HTTP_401_UNAUTHORIZED
+            )
+            response.delete_cookie("auth_token", **cookie_params)
+            return response
+
+        if isinstance(request.user, AnonymousUser):
+            response = Response(
+                {"authenticated": False}, status=status.HTTP_401_UNAUTHORIZED
+            )
+            response.delete_cookie("auth_token", **cookie_params)
+            return response
+
+        return Response(
+            {"authenticated": True},
+            status=status.HTTP_200_OK,
+        )
 
 
 class RegisterView(views.APIView):
@@ -79,8 +109,7 @@ class LoginView(views.APIView):
                     {"error": "Your username or password were incorrect."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-        except Exception as e:
-            print(e)
+        except Exception:
             return Response(
                 {"error": "There was an error signing you in. Please try again later."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -17,6 +17,73 @@ def user(password_for_user: str) -> models.CustomUser:
     return user
 
 
+@pytest.mark.django_db
+class TestAuthCheckView:
+    def test_valid_token_returns_200_keeps_cookie(
+        self, user: models.CustomUser
+    ) -> None:
+        client = APIClient()
+
+        # Create token
+        token = Token.objects.create(user=user)
+
+        # Check DB for token before deleting it
+        user_token = Token.objects.filter(key=token)
+        token_exists = user_token.exists()
+        assert token_exists
+
+        client.cookies["auth_token"] = token.key
+        response = client.get("/api/auth_token/check")
+
+        # Check response
+        assert response.status_code == 200
+        assert response.data["authenticated"]
+
+        # Check cookies
+        assert "auth_token" in client.cookies
+        assert client.cookies["auth_token"].value == token.key
+
+    def test_invalid_token_returns_401_deletes_cookie(
+        self, user: models.CustomUser
+    ) -> None:
+        client = APIClient()
+
+        # Create token
+        token = Token.objects.create(user=user)
+
+        # Check DB for token before deleting it
+        user_token = Token.objects.filter(key=token)
+        token_exists = user_token.exists()
+        assert token_exists
+
+        # client.credentials(HTTP_AUTHORIZATION="Token some_invalid_token")
+        client.cookies["auth_token"] = "Token some_invalid_token"
+        response = client.get("/api/auth_token/check")
+
+        # Check response
+        assert response.status_code == 401
+
+        # Check cookies
+        assert client.cookies["auth_token"].value == ""
+
+    def test_no_token_returns_401(self, user: models.CustomUser) -> None:
+        client = APIClient()
+
+        # Create token
+        token = Token.objects.create(user=user)
+
+        # Check DB for token before deleting it
+        user_token = Token.objects.filter(key=token)
+        token_exists = user_token.exists()
+        assert token_exists
+
+        client.credentials()
+        response = client.get("/api/auth_token/check")
+
+        # Check response
+        assert response.status_code == 401
+
+
 class TestRegisterUser:
     @pytest.mark.django_db
     def test_user_can_be_registered(self) -> None:
