@@ -430,3 +430,48 @@ class TestItemDelete:
         )
 
         assert response.status_code == 401
+
+
+@pytest.mark.django_db
+class TestItemEventDetailGet:
+    def test_item_events_can_be_retrieved(
+        self, user: models.CustomUser, used_from: datetime, used_to: datetime
+    ) -> None:
+        client = APIClient()
+
+        # Create token for user
+        token = Token.objects.create(user=user)
+
+        # Create items in DB
+        item_one: models.Item = models.Item.objects.create(
+            name="Abacus",
+            barcode="123",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user=user,
+        )
+        assert models.Item.objects.count() == 1
+
+        # Create item event in DB
+        models.ItemEvent.objects.create(
+            item=item_one, description=f"{item_one.name} created."
+        )
+        assert models.ItemEvent.objects.count() == 1
+
+        # Get item events
+        client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
+        response = client.get(f"/api/item_management/item_events/{item_one.pk}")
+
+        # Check response
+        assert response.status_code == 200
+
+        # # Check content
+        returned_item_event = response.json()
+        assert returned_item_event is not None
+
+        # Assertions on item one
+        assert (
+            returned_item_event["events"][0]["description"]
+            == f"{item_one.name} created."
+        )

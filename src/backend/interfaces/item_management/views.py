@@ -1,10 +1,12 @@
 from typing import Any, cast
 
+from attr import asdict
 from rest_framework import permissions, request, response, status, views
 
 from backend.application.item_management import (
     add_item_to_inventory,
     get_one_item_for_user,
+    list_all_item_events_for_item,
     list_all_items_for_user,
     remove_item_from_inventory,
     update_item_for_user,
@@ -144,5 +146,33 @@ class ItemDetail(views.APIView):
         except Exception:
             return response.Response(
                 {"error": "There was an error deleting the item"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class ItemEventDetail(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request: request.Request, pk: int) -> response.Response:
+        try:
+            item_id: int = pk
+            user_id: int = cast(int, request.user.pk)
+
+            returned_item_events = (
+                list_all_item_events_for_item.list_all_item_events_for_item(
+                    user_id, item_id
+                )
+            )
+            returned_item_events_dict = {
+                "events": [asdict(event) for event in returned_item_events]
+            }
+
+            return response.Response(
+                returned_item_events_dict,
+                status=status.HTTP_200_OK,
+            )
+        except Exception:
+            return response.Response(
+                {"error": "The item events could not be retrieved."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
