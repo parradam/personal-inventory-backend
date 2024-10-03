@@ -1,15 +1,24 @@
+from django.db import transaction
+
 from backend.data import models
 from backend.domain.item_management import dtos, mappers
 
 
 def create_item(item_dto: dtos.ItemDTO) -> dtos.ItemDTO:
-    user: models.CustomUser = models.CustomUser.objects.get(id=item_dto.user_id)
+    with transaction.atomic():
+        user: models.CustomUser = models.CustomUser.objects.get(id=item_dto.user_id)
 
-    item: models.Item = mappers.map_dto_to_model(item_dto, user)
-    item.save()
-    new_item_dto: dtos.ItemDTO = mappers.map_model_to_dto(item)
+        item: models.Item = mappers.map_dto_to_model(item_dto, user)
+        item.save()
+        new_item_dto: dtos.ItemDTO = mappers.map_model_to_dto(item)
 
-    return new_item_dto
+        event_description: str = f"{item.name} created."
+        item_event: models.ItemEvent = models.ItemEvent(
+            item=item, description=event_description
+        )
+        item_event.save()
+
+        return new_item_dto
 
 
 def update_item(item_dto: dtos.UpdateItemDTO, user_id: int) -> dtos.ItemDTO:

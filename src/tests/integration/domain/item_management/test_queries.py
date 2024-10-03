@@ -206,3 +206,34 @@ class TestGetItem:
 
         with pytest.raises(models.Item.DoesNotExist):
             queries.get_item(user_id=user.pk, item_id=1)
+
+
+@pytest.mark.django_db
+class TestGetItemEvents:
+    def test_can_get_item_events(
+        self, user: models.CustomUser, used_from: datetime, used_to: datetime
+    ) -> None:
+        # Create item in DB
+        item_one: models.Item = models.Item.objects.create(
+            name="Abacus",
+            barcode="123",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user=user,
+        )
+        assert models.Item.objects.count() == 1
+
+        # Create item event in DB
+        models.ItemEvent.objects.create(
+            item=item_one, description=f"{item_one.name} created."
+        )
+        assert models.ItemEvent.objects.count() == 1
+
+        retrieved_item_events: list[dtos.GetItemEventDTO] = queries.get_item_events(
+            user.pk, item_one.pk
+        )
+
+        # Assertions on item event
+        assert len(retrieved_item_events) == 1
+        assert retrieved_item_events[0].description == f"{item_one.name} created."

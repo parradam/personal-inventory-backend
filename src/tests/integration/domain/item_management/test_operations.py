@@ -2,7 +2,7 @@ from datetime import datetime
 
 import pytest
 from backend.data import models
-from backend.domain.item_management import dtos, operations
+from backend.domain.item_management import dtos, mappers, operations
 from django.utils import timezone
 
 
@@ -76,6 +76,35 @@ class TestCreateItem:
         assert returned_item_dto.used_from == used_from
         assert returned_item_dto.used_to == used_to
         assert returned_item_dto.user_id == user_id
+
+    def test_can_create_item_event(
+        self, user: models.CustomUser, used_from: datetime, used_to: datetime
+    ) -> None:
+        user.save()
+        user_id: int = user.pk
+
+        item_dto: dtos.ItemDTO = dtos.ItemDTO(
+            name="Test item",
+            barcode="12345678",
+            owner="Owner",
+            used_from=used_from,
+            used_to=used_to,
+            user_id=user_id,
+        )
+
+        operations.create_item(item_dto)
+
+        # First check that DB was updated
+        returned_model: models.Item | None = models.Item.objects.first()
+        assert returned_model is not None
+        assert returned_model.name == "Test item"
+
+        # Then check ItemEvent was created with message
+        returned_item_event_model: models.ItemEvent | None = (
+            models.ItemEvent.objects.first()
+        )
+        assert returned_item_event_model is not None
+        assert returned_item_event_model.description == "Test item created."
 
 
 @pytest.mark.django_db
@@ -151,11 +180,13 @@ class TestDeleteItem:
             used_to=used_to,
             user_id=user_id,
         )
-        returned_item_dto: dtos.ItemDTO = operations.create_item(item_dto)
-        assert models.Item.objects.count() == 1
-        assert returned_item_dto.id
+        item: models.Item = mappers.map_dto_to_model(item_dto, user)
+        item.save()
 
-        result = operations.delete_item(returned_item_dto.id, user.pk)
+        assert models.Item.objects.count() == 1
+        assert item.pk
+
+        result = operations.delete_item(item.pk, user.pk)
 
         assert result
         assert models.Item.objects.count() == 0
