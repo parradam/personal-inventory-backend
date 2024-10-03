@@ -19,3 +19,15 @@ def get_item(user_id: int, item_id: int) -> dtos.ItemDTO:
     item_dto: dtos.ItemDTO = mappers.map_model_to_dto(item)
 
     return item_dto
+
+
+def get_item_events(user_id: int, item_id: int) -> list[dtos.GetItemEventDTO]:
+    item_events: QuerySet[models.ItemEvent] = models.ItemEvent.objects.filter(
+        item_id=item_id, item__user_id=user_id
+    )
+
+    item_event_dtos: list[dtos.GetItemEventDTO] = list(
+        map(mappers.map_item_event_model_to_dto, item_events)
+    )
+
+    return item_event_dtos

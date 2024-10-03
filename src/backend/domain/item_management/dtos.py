@@ -23,3 +23,10 @@ class UpdateItemDTO:
     used_to: datetime | None = None
     barcode: str | None = None
     owner: str | None = None
+
+
+@define
+class GetItemEventDTO:
+    id: int
+    description: str
+    event_at: datetime

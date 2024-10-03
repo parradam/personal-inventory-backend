@@ -36,3 +36,11 @@ def map_dto_to_model(item_dto: dtos.ItemDTO, user: models.CustomUser) -> models.
         owner=item_dto.owner,
         id=item_dto.id,
     )
+
+
+def map_item_event_model_to_dto(item_event: models.ItemEvent) -> dtos.GetItemEventDTO:
+    return dtos.GetItemEventDTO(
+        id=item_event.pk,
+        description=item_event.description,
+        event_at=item_event.event_at,
+    )
