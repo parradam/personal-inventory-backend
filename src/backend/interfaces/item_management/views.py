@@ -134,15 +134,9 @@ class ItemDetail(views.APIView):
         try:
             item_id: int = pk
             user_id: int = cast(int, request.user.pk)
-            has_item_been_removed: bool = (
-                remove_item_from_inventory.remove_item_from_inventory(item_id, user_id)
-            )
-            if has_item_been_removed:
-                return response.Response(status=204)
-            return response.Response(
-                {"error": "The item could not be deleted"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+
+            remove_item_from_inventory.remove_item_from_inventory(item_id, user_id)
+            return response.Response(status=204)
         except Exception:
             return response.Response(
                 {"error": "There was an error deleting the item"},

@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 
 from backend.data import models
@@ -37,13 +38,15 @@ def update_item(item_dto: dtos.UpdateItemDTO, user_id: int) -> dtos.ItemDTO:
     return updated_item_dto
 
 
-def delete_item(item_id: int, user_id: int) -> bool:
+def delete_item(item_id: int, user_id: int) -> None:
     try:
         item_to_delete: models.Item = models.Item.objects.get(pk=item_id)
-        has_item_been_deleted = False
+        # has_item_been_deleted = False
         if item_to_delete.user.pk == user_id:
-            number_of_items_deleted = item_to_delete.delete()
-            has_item_been_deleted = number_of_items_deleted[0] == 1
-        return has_item_been_deleted
-    except Exception:
-        return False
+            item_to_delete.delete()
+            # has_item_been_deleted = number_of_items_deleted[0] == 1
+        # return has_item_been_deleted
+    except ObjectDoesNotExist:
+        print(f"Item with ID {item_id} does not exist.")
+    except Exception as e:
+        print(f"Error deleting item with ID {item_id}: {e}")
