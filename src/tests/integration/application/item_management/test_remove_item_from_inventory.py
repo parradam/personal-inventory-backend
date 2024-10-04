@@ -60,9 +60,8 @@ class TestListAllItemsForUser:
         )
         assert models.Item.objects.count() == 2
 
-        has_item_been_removed: bool = remove_item_from_inventory(item_one.pk, user.pk)
+        remove_item_from_inventory(item_one.pk, user.pk)
 
-        assert has_item_been_removed
         # Check that correct list of items is returned
         assert models.Item.objects.count() == 1
         # Check that item_two is the only one left
@@ -94,11 +93,7 @@ class TestListAllItemsForUser:
         )
         assert models.Item.objects.count() == 2
 
-        has_item_been_removed: bool = remove_item_from_inventory(
-            item_one.pk, another_user.pk
-        )
+        remove_item_from_inventory(item_one.pk, another_user.pk)
 
-        # Check no items were deleted - not the correct user ID
-        assert not has_item_been_removed
         # Check that list of items is unchanged
         assert models.Item.objects.count() == 2

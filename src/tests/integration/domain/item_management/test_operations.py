@@ -186,7 +186,6 @@ class TestDeleteItem:
         assert models.Item.objects.count() == 1
         assert item.pk
 
-        result = operations.delete_item(item.pk, user.pk)
+        operations.delete_item(item.pk, user.pk)
 
-        assert result
         assert models.Item.objects.count() == 0
